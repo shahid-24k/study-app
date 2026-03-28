@@ -9,8 +9,8 @@ source.include_patterns = assets/*,data/*
 
 version = 1.0
 
-# kivy==2.2.1 is stable for API 21 old phones
-requirements = python3==3.11.6,kivy==2.2.1,pillow
+# kivy==2.3.0 is stable and works with GitHub Actions Python 3.11
+requirements = python3,kivy==2.3.0,pillow
 
 # Orientation
 orientation = portrait
