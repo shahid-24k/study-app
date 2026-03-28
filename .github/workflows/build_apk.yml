@@ -38,9 +38,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.buildozer
-          key: buildozer-v2-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
+          key: buildozer-v3-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
           restore-keys: |
-            buildozer-v2-${{ runner.os }}-
+            buildozer-v3-${{ runner.os }}-
 
       - name: Install Android SDK command-line tools
         run: |
@@ -50,18 +50,27 @@ jobs:
           SDK_DIR="$HOME/.buildozer/android/platform/android-sdk"
           mkdir -p "$SDK_DIR"
 
+          # Remove old/broken cmdline-tools if present from cache
+          rm -rf "$SDK_DIR/cmdline-tools"
+          mkdir -p "$SDK_DIR/cmdline-tools/latest"
+
+          # Download fresh Android command-line tools
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O /tmp/cmdtools.zip
           unzip -q /tmp/cmdtools.zip -d /tmp/cmdtools
-          mkdir -p "$SDK_DIR/cmdline-tools/latest"
+
+          # Move contents into the correct folder structure
           mv /tmp/cmdtools/cmdline-tools/* "$SDK_DIR/cmdline-tools/latest/"
 
           export ANDROID_SDK_ROOT="$SDK_DIR"
           export PATH="$SDK_DIR/cmdline-tools/latest/bin:$SDK_DIR/platform-tools:$PATH"
 
+          # Accept all licences
           yes | sdkmanager --licenses > /dev/null 2>&1 || true
+
+          # Install required SDK packages
           sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
 
-          echo "SDK installed:"
+          echo "SDK installed successfully"
           ls "$SDK_DIR"
 
       - name: Build APK with Buildozer
