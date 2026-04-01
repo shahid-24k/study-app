@@ -9,39 +9,32 @@ source.include_patterns = assets/*,data/*
 
 version = 1.0
 
-# kivy==2.3.0 is stable and works with GitHub Actions Python 3.11
-requirements = python3,kivy==2.3.0,pillow
+# Stable requirements that work on Android
+requirements = python3,kivy==2.3.0,pillow,android
 
-# Orientation
 orientation = portrait
 
-# android.minapi=21 = Android 5.0 Lollipop and above (very old phone support)
-# android.api=33    = target modern Android (required for most app stores)
+# Android 5.0+ support
 android.api = 33
 android.minapi = 21
 android.ndk = 25b
-android.sdk = 33
 android.ndk_api = 21
 
-# armeabi-v7a = old 32-bit phones | arm64-v8a = modern 64-bit phones
+# Build for both old and new phones
 android.archs = arm64-v8a, armeabi-v7a
 
-# SECURITY: No internet permission = zero network attack surface
+# Permissions — none needed (fully offline app)
 android.permissions =
 
-# Prevent ADB data extraction
+# Security
 android.allow_backup = False
 
-android.manifest.intent_filters =
-android.add_aars =
+# Fixes black screen on many Android devices
+android.meta_data = android.max_aspect=2.1
 
-# Performance tuning for old/low-end GPUs
-android.env_vars = KIVY_GL_BACKEND=sdl2,KIVY_WINDOW=sdl2
+android.manifest.intent_filters =
 
 fullscreen = 0
-
-# Uncomment to set app icon (place 512x512 icon.png in assets/)
-# icon.filename = assets/icon.png
 
 [buildozer]
 log_level = 2
