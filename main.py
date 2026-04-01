@@ -1,41 +1,68 @@
 """
 StudyApp - Personal Study Command Center for Shahid Khan
-Secure, local-only, no external data leakage.
 """
-
 import os
-os.environ["KIVY_NO_ENV_CONFIG"] = "1"  # Disable env-based config injection
+import sys
+
+# Android-safe environment setup
+os.environ["KIVY_NO_ENV_CONFIG"] = "1"
+os.environ["KIVY_NO_CONSOLELOG"] = "1"
+
+# Must set these BEFORE importing kivy
+from kivy.config import Config
+Config.set('kivy', 'log_level', 'debug')
+Config.set('graphics', 'multisamples', '0')  # fixes black screen on old GPUs
+Config.set('graphics', 'allow_screensaver', '0')
 
 from kivy.app import App
 from kivy.uix.screenmanager import ScreenManager, SlideTransition
 from kivy.core.window import Window
 from kivy.utils import platform
 
-from screens.lock_screen import LockScreen
-from screens.home_screen import HomeScreen
-from screens.pomodoro_screen import PomodoroScreen
-from screens.tasks_screen import TasksScreen
-from screens.subjects_screen import SubjectsScreen
-from screens.hadith_screen import HadithScreen
-from screens.prayer_screen import PrayerScreen
-from screens.exam_screen import ExamScreen
-from screens.settings_screen import SettingsScreen
-from utils.storage import SecureStorage
-from utils.theme import ThemeManager
-
 Window.softinput_mode = "below_target"
+
+# Import screens — wrapped in try/except so crash shows error not black screen
+try:
+    from screens.lock_screen import LockScreen
+    from screens.home_screen import HomeScreen
+    from screens.pomodoro_screen import PomodoroScreen
+    from screens.tasks_screen import TasksScreen
+    from screens.subjects_screen import SubjectsScreen
+    from screens.hadith_screen import HadithScreen
+    from screens.prayer_screen import PrayerScreen
+    from screens.exam_screen import ExamScreen
+    from screens.settings_screen import SettingsScreen
+    from utils.storage import SecureStorage
+    from utils.theme import ThemeManager
+    IMPORT_OK = True
+    IMPORT_ERROR = None
+except Exception as e:
+    IMPORT_OK = False
+    IMPORT_ERROR = str(e)
 
 
 class StudyApp(App):
     title = "StudyApp"
-    icon = "assets/icon.png"
 
     def build(self):
+        if not IMPORT_OK:
+            # Show error screen instead of crashing silently
+            from kivy.uix.label import Label
+            from kivy.uix.boxlayout import BoxLayout
+            root = BoxLayout(orientation='vertical', padding=20)
+            root.add_widget(Label(
+                text=f"[b]Import Error:[/b]\n{IMPORT_ERROR}",
+                markup=True,
+                font_size='14sp',
+                color=(1, 0.3, 0.3, 1),
+                halign='center',
+            ))
+            return root
+
         self.storage = SecureStorage()
         self.theme = ThemeManager(self.storage)
 
         sm = ScreenManager(transition=SlideTransition())
-
         sm.add_widget(LockScreen(name="lock"))
         sm.add_widget(HomeScreen(name="home"))
         sm.add_widget(PomodoroScreen(name="pomodoro"))
@@ -46,20 +73,20 @@ class StudyApp(App):
         sm.add_widget(ExamScreen(name="exams"))
         sm.add_widget(SettingsScreen(name="settings"))
 
-        # Always start at lock screen
         sm.current = "lock"
         self.sm = sm
         return sm
 
     def on_pause(self):
-        # Lock app when minimized (security: re-lock on resume)
         return True
 
     def on_resume(self):
-        self.sm.current = "lock"
+        if hasattr(self, 'sm'):
+            self.sm.current = "lock"
 
     def on_stop(self):
-        self.storage.flush()
+        if hasattr(self, 'storage'):
+            self.storage.flush()
 
 
 if __name__ == "__main__":
