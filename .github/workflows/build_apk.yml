@@ -48,21 +48,14 @@ jobs:
           export PATH=$JAVA_HOME/bin:$PATH
 
           SDK_DIR="$HOME/.buildozer/android/platform/android-sdk"
-
-          # Clean everything and start fresh
           rm -rf "$SDK_DIR"
           mkdir -p "$SDK_DIR"
 
-          # Download Android command-line tools
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O /tmp/cmdtools.zip
           unzip -q /tmp/cmdtools.zip -d /tmp/cmdtools
-
-          # Install into cmdline-tools/latest
           mkdir -p "$SDK_DIR/cmdline-tools/latest"
           mv /tmp/cmdtools/cmdline-tools/* "$SDK_DIR/cmdline-tools/latest/"
 
-          # Create the OLD tools/bin path that Buildozer looks for
-          # and put sdkmanager there as a symlink
           mkdir -p "$SDK_DIR/tools/bin"
           ln -sf "$SDK_DIR/cmdline-tools/latest/bin/sdkmanager" "$SDK_DIR/tools/bin/sdkmanager"
           ln -sf "$SDK_DIR/cmdline-tools/latest/bin/avdmanager"  "$SDK_DIR/tools/bin/avdmanager"
@@ -71,30 +64,19 @@ jobs:
           export ANDROID_HOME="$SDK_DIR"
           export PATH="$SDK_DIR/cmdline-tools/latest/bin:$SDK_DIR/platform-tools:$SDK_DIR/tools/bin:$PATH"
 
-          # Accept licences
           yes | sdkmanager --sdk_root="$SDK_DIR" --licenses > /dev/null 2>&1 || true
-
-          # Install SDK packages
           sdkmanager --sdk_root="$SDK_DIR" "platform-tools" "platforms;android-33" "build-tools;33.0.2"
-
-          echo "=== SDK structure ==="
-          ls "$SDK_DIR"
-          echo "=== tools/bin ==="
-          ls "$SDK_DIR/tools/bin"
 
       - name: Build APK with Buildozer
         run: |
           export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
           export PATH=$JAVA_HOME/bin:$PATH
-
           SDK_DIR="$HOME/.buildozer/android/platform/android-sdk"
           export ANDROID_SDK_ROOT="$SDK_DIR"
           export ANDROID_HOME="$SDK_DIR"
           export PATH="$SDK_DIR/cmdline-tools/latest/bin:$SDK_DIR/platform-tools:$SDK_DIR/tools/bin:$PATH"
 
           buildozer -v android debug 2>&1 | tee build.log
-
-          echo "--- listing bin/ ---"
           ls -lh bin/ 2>/dev/null || echo "bin/ not created"
 
       - name: Upload APK
@@ -108,10 +90,10 @@ jobs:
         if: always()
         run: |
           if ls bin/*.apk 1>/dev/null 2>&1; then
-            echo "SUCCESS! APK built:"
+            echo "SUCCESS:"
             ls -lh bin/*.apk
           else
-            echo "FAILED — last 150 lines of build log:"
+            echo "FAILED — last 150 lines:"
             tail -150 build.log 2>/dev/null || echo "No log"
           fi
 
